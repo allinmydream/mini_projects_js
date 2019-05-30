@@ -1,0 +1,197 @@
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d"); // 2d 캔버스에 그릴 수 있도록 하는 함수
+// 공의 초기위치 설정
+var x = canvas.width/2; 
+var y = canvas.height-30;
+// 공의 위치이동 속도 setInterval()로 다시 그려질 때마다 이동되는 픽셀값 클수록 빠르다. 
+var dx = 2;
+var dy = -2;
+var ballRadius = 10; //공의 반지름 
+// 패들의 크기설정 값 
+var paddleHeight = 10;
+var paddleWidth = 75;
+var paddleX = (canvas.width-paddleWidth)/2; //패들이 그려지기 시작하는 X값, 패들을 정중간에 초기값을 두기위함 
+// left, right button 초기화
+var rightPressed = false;
+var leftPressed = false;
+//벽돌 행과 열의 수 설정변수
+var brickRowCount = 4;
+var brickColumnCount = 5;
+//벽돌 크기설정과 간격 변수 
+var brickWidth = 75;
+var brickHeight = 20;
+var brickPadding = 10;
+// 벽돌그릴 위치 변수
+var brickOffsetTop = 30;
+var brickOffsetLeft = 30;
+var score = 0;
+var lives = 3;
+var colorCode = "#0095DD";
+
+// 벽돌 행렬에 따라서 좌표찍기
+var bricks = [];
+for(var c=0; c<brickColumnCount; c++){
+    bricks[c] = [];
+    for(var r=0; r<brickRowCount; r++){
+        bricks[c][r] = {x:0, y:0, status:1};
+    }
+}
+
+//키를 누르고 뗄 때마다 작용하는 이벤트
+document.addEventListener("keydown", keyDownHandler, false);
+document.addEventListener("keyup", keyUpHandler, false);
+document.addEventListener("mousemove", mouseMoveHandler, false);
+
+function mouseMoveHandler(e) {
+    var relativeX = e.clientX - canvas.offsetLeft;
+    if(relativeX > 0 && relativeX < canvas.width) {
+        paddleX = relativeX - paddleWidth/2;
+    }
+}
+
+// 키를 누르는 이벤트가 발생 시 키값으로 오른키인지 왼키인지 구분 후 true값을 반환
+function keyDownHandler(e){
+    if(e.keyCode == 39) {
+        rightPressed = true;
+    }else if(e.keyCode == 37){
+        leftPressed = true;
+    }
+}
+
+// 키를 뗄 때 어떤 키인지 구분 후 false 값을 반환
+function keyUpHandler(e){
+    if(e.keyCode == 39){
+        rightPressed = false;
+    }else if(e.keyCode == 37){
+        leftPressed = false;
+    }
+}
+
+// 벽돌그리기
+function drawBricks() {
+    for(var c=0; c<brickColumnCount; c++){
+        for(var r=0; r<brickRowCount; r++){
+            if(bricks[c][r].status == 1) {
+                var brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+                var brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+                bricks[c][r].x = brickX;
+                bricks[c][r].y = brickY;
+                ctx.beginPath();
+                ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                ctx.fillStyle = colorCode;
+                ctx.fill();
+                ctx.closePath();
+            }        
+        }
+    }
+}
+
+function ballColor() {
+    colorCode = "#" + Math.round(Math.random()* 0xffffff).toString(16);
+}
+
+// 충돌감지하고 튕겨낸 후 원래 벽돌은 지우기 
+function collisionDetection() {
+    for(var c=0; c<brickColumnCount; c++) {
+        for(var r=0; r<brickRowCount; r++){
+            var b = bricks[c][r];
+            if(b.status == 1){
+                if(x > b.x && x < b.x+brickWidth && y > b.y && y < b.y+brickHeight){
+                    dy = -dy
+                    b.status = 0;
+                    score++;
+                    ballColor();
+                    if(score == brickRowCount*brickColumnCount) {
+                        alert("You win, Congratuations!");
+                        document.location.reload();
+                    }
+                }
+            }   
+        }
+    }
+}
+
+function drawScore() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = colorCode;
+    ctx.fillText("Score : " + score, 8, 20);
+}
+
+function drawLives() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = colorCode;
+    ctx.fillText("Lives : " + lives, canvas.width-65, 20);
+}
+
+//공의 크기와 스타일 캔버스에 그리기 
+function drawBall() {
+    ctx.beginPath();
+    ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+    ctx.fillStyle=colorCode;
+    ctx.fill();
+    ctx.closePath();
+}
+
+
+
+//패들의 크기과 스타일 캔버스에 그리기
+function drawPaddle() {
+    ctx.beginPath();
+    ctx.rect(paddleX, canvas.height-paddleHeight, paddleWidth, paddleHeight)
+    ctx.fillStyle = colorCode;
+    ctx.fill();
+    ctx.closePath();
+}
+
+function draw() {
+    //이동한 공을 그리기 전에 캔버스를 다 지움 
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBricks();
+    drawBall(); //setInterval()로 계속해서 다시 그림 
+    drawPaddle();
+    collisionDetection();
+    drawScore();
+    drawLives();
+
+    //공이 캔버스밖으로 나가려고 할 때 -값으로 다시 되돌려보냄 
+    if(x + dx < ballRadius || x + dx > canvas.width - ballRadius){
+        dx = -dx
+    }
+
+    if(y + dy < ballRadius) {
+        dy = -dy;
+    }else if(y + dy > canvas.height - ballRadius) {
+        if(x > paddleX && x < paddleX + paddleWidth){ //???
+            dy = -dy
+        }else {
+            lives--;
+            if(!lives) {
+                alert("game over");
+                document.location.reload();
+                clearInterval(interval);
+            }else {
+                x = canvas.width/2;
+                y = canvas.height-30;
+                dx = 2;
+                dy = -2;
+                paddleX = (canvas.width-paddleWidth)/2;
+            }
+            
+        }
+        
+    }
+
+    //이벤트에서 발생한 키가 오른키인지 왼키인지 확인 후 오른키일 경우 +7픽셀 왼키일 경우 -7픽셀씩 이동
+    if(rightPressed && paddleX < canvas.width-paddleWidth){
+        paddleX += 7;
+    }else if(leftPressed && paddleX > 0){
+        paddleX -= 7;
+    }
+
+    x += dx;
+    y += dy;
+    requestAnimationFrame(draw);
+
+}
+
+draw();

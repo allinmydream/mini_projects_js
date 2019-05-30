@@ -31,8 +31,26 @@
     // left, right button 초기화
     var rightPressed = false;
     var leftPressed = false;
-    //키를 누르고 뗄 때마다 작용하는 이벤트
+    //벽돌 행과 열의 수 설정변수
+    var brickRowCount = 3;
+    var brickColumnCount = 5;
+    //벽돌 크기설정과 간격 변수 
+    var brickWidth = 75;
+    var brickHeight = 20;
+    var brickPadding = 10;
+    // 벽돌그릴 위치 변수
+    var brickOffsetTop = 30;
+    var brickOffsetLeft = 30;
+    
+    var bricks = [];
+    for(var c=0; c<brickColumnCount; c++){
+        bricks[c] = [];
+        for(var r=0; r<brickRowCount; r++){
+            bricks[c][r] = {x:0, y:0};
+        }
+    }
 
+    //키를 누르고 뗄 때마다 작용하는 이벤트
     document.addEventListener("keydown", keyDownHandler, false);
     document.addEventListener("keyup", keyUpHandler, false);
 
@@ -53,6 +71,24 @@
             leftPressed = false;
         }
     }
+
+    function drawBricks() {
+        for(var c=0; c<brickColumnCount; c++){
+            for(var r=0; r<brickRowCount; r++){
+                var brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+                var brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+                bricks[c][r].x = brickX;
+                bricks[c][r].y = brickY;
+                ctx.beginPath();
+                ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                ctx.fillStyle = "#0095DD";
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+    }
+
+
 
     //공의 크기와 스타일 캔버스에 그리기 
     function drawBall() {
@@ -75,6 +111,7 @@
     function draw() {
         //이동한 공을 그리기 전에 캔버스를 다 지움 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBricks();
         drawBall(); //setInterval()로 계속해서 다시 그림 
         drawPaddle();
 
@@ -82,8 +119,18 @@
         if(x + dx < ballRadius || x + dx > canvas.width - ballRadius){
             dx = -dx
         }
-        if(y + dy < ballRadius || y + dy > canvas.height - ballRadius){
-            dy = -dy
+
+        if(y + dy < ballRadius) {
+            dy = -dy;
+        }else if(y + dy > canvas.height - ballRadius) {
+            if(x > paddleX && x < paddleX + paddleWidth){ //???
+                dy = -dy
+            }else {
+                //바닥면에 닿을 때 초기화하고 게임오버됨을 알림 
+                alert("game over");
+                document.location.reload();
+            }
+            
         }
 
         //이벤트에서 발생한 키가 오른키인지 왼키인지 확인 후 오른키일 경우 +7픽셀 왼키일 경우 -7픽셀씩 이동

@@ -82,8 +82,18 @@
         if(x + dx < ballRadius || x + dx > canvas.width - ballRadius){
             dx = -dx
         }
-        if(y + dy < ballRadius || y + dy > canvas.height - ballRadius){
-            dy = -dy
+
+        if(y + dy < ballRadius) {
+            dy = -dy;
+        }else if(y + dy > canvas.height - ballRadius) {
+            if(x > paddleX && x < paddleX + paddleWidth){ //???
+                dy = -dy
+            }else {
+                //바닥면에 닿을 때 초기화하고 게임오버됨을 알림 
+                alert("game over");
+                document.location.reload();
+            }
+            
         }
 
         //이벤트에서 발생한 키가 오른키인지 왼키인지 확인 후 오른키일 경우 +7픽셀 왼키일 경우 -7픽셀씩 이동
